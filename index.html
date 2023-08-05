@@ -47,11 +47,11 @@
 
     async function setupCarousel() {
       //Get the reviews from the reviews.json and parse it into a JS object
-      const response = await fetch(reviews_url);
-        const reviewsAll = await response.json();
-        //get only the first 10 reviews
-        const reviews = reviewsAll.splice(90);
-      console.log(reviews);
+        const response = await fetch(reviews_url);
+        
+        const reviews = await response.json();
+        console.log(reviews)
+      
 
       let currentIndex = 0;
       const carouselContainer = document.getElementById("reviewCarousel");
