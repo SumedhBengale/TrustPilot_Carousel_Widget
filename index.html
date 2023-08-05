@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reviews Carousel</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-white overflow-hidden w-full ">
+  <div class="flex min-h-screen border-solid border-2 border-black rounded-lg">
+    <div class="w-full flex">
+      <div id="mainRatingContainer" class="w-full max-w-sm sm:w-72">
+        
+      </div>
+      <!-- Carousel Container -->
+      <div class="relative overflow-hidden w-full">
+        <div id="reviewCarousel" class="flex transition-transform duration-500 ease-in-out">
+          <!-- Reviews will be dynamically added here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+
+  <script>
+    function generateStars(ratingValue) {
+  const numStars = Math.floor(ratingValue);
+  const halfStar = ratingValue - numStars >= 0.5;
+  let starHTML = '';
+  if(ratingValue === '5') {
+    for (let i = 0; i < numStars; i++) {
+    starHTML += `<img src=${star} alt="star" class="w-6 h-6">`;
+    }  
+  }else if(ratingValue === '4'){
+    for (let i = 0; i < numStars; i++) {
+      starHTML += `<img src=${star_light} alt="star" class="w-6 h-6">`;
+    }
+    starHTML += `<img src=${star_grey} alt="star" class="w-6 h-6">`;
+
+  }
+  
+  return starHTML;
+}
+
+    async function setupCarousel() {
+      //Get the reviews from the reviews.json and parse it into a JS object
+      const response = await fetch(reviews_url);
+        const reviewsAll = await response.json();
+        //get only the first 10 reviews
+        const reviews = reviewsAll.splice(90);
+      console.log(reviews);
+
+      let currentIndex = 0;
+      const carouselContainer = document.getElementById("reviewCarousel");
+      const mainRatingContainer = document.getElementById("mainRatingContainer");
+      // Calculate the average rating from all the reviews
+      const averageRating = reviews.reduce((acc, review) => acc + (cappedRating = Math.min(review.reviewRating.ratingValue, 5)), 0) / reviews.length;
+      const roundedRating = Math.round(averageRating * 2) / 2;
+
+      generateMainRating()
+      // Function to generate the stars for the average rating
+      function generateMainRating(){
+        const mainRating = document.createElement("div");
+        mainRating.className = "w-full max-w-sm sm:w-72 flex flex-col h-full justify-center items-center gap-2";
+        mainRating.innerHTML=`
+            <div class="text-2xl font-bold">Excellent</div>
+                ${
+                  roundedRating === 4 ?
+                     `<div class='flex gap-0.5'>
+                        <img src=${star_light} alt="star" class="w-6 h-6"/>
+                        <img src=${star_light} alt="star" class="w-6 h-6"/>
+                        <img src=${star_light} alt="star" class="w-6 h-6"/>
+                        <img src=${star_light} alt="star" class="w-6 h-6"/>
+                      </div>`
+                      :
+                      `<div class='flex gap-0.5'>
+                      <img src=${star} alt="star" class="w-6 h-6"/>
+                      <img src=${star} alt="star" class="w-6 h-6"/>
+                      <img src=${star} alt="star" class="w-6 h-6"/>
+                      <img src=${star} alt="star" class="w-6 h-6"/>
+                      <img src=${star} alt="star" class="w-6 h-6"/>
+                     </div>`
+
+                }
+            <div class="text-sm">${averageRating} out of 5</div>
+            <div class="flex">
+                <img src=${star_green} alt="star" class="w-6 h-6">
+                <div>TrustPilot</div>
+            </div>
+        `;
+        mainRatingContainer.appendChild(mainRating);
+        
+      }
+
+      // Function to populate the carousel with reviews
+      function populateCarousel() {
+        reviews.forEach((review, index) => {
+          if(
+            review.reviewRating.ratingValue >= 4
+          ){
+          const reviewCard = document.createElement("div");
+          reviewCard.className = "w-full mx-2 p-4";
+          reviewCard.innerHTML = `
+            <div class="w-36 h-40">
+              <h3 class="text-lg font-semibold mb-2"><div class='flex w-full justify-center gap-0.5'>${generateStars(review.reviewRating.ratingValue)}</div></h3>
+                <p class="text-gray-600 font-bold text-sm truncate">${review.headline}</p>
+                <div class='h-30 overflow-hidden overflow-ellipsis'>
+                  <p class="text-gray-600 pt-2 text-sm h-28">${review.reviewBody}</p>
+                  </div>
+              </div>
+          `;
+          carouselContainer.appendChild(reviewCard);
+        }
+      }
+        );
+      }
+
+      // Function to animate the scrolling effect
+      function animateCarousel() {
+        const cardWidth = carouselContainer.children[0].offsetWidth;
+
+        // Increment the currentIndex to the next card
+        currentIndex = (currentIndex + 1) % reviews.length;
+
+        // Apply the transformation to scroll to the next card
+        carouselContainer.style.transition = "transform 2s linear";
+        carouselContainer.style.transform = `translateX(-${currentIndex * cardWidth + 30}px)`;
+      }
+
+      // Populate the carousel on page load and start the scrolling animation
+      populateCarousel();
+      setInterval(animateCarousel, 2000)
+    }
+
+     // Listen for messages from the parent page
+     window.addEventListener('message', (event) => {
+      if (event.data === 'setupCarousel') {
+        setupCarousel();
+      }
+    });
+
+  </script>
+</body>
+
+</html>
